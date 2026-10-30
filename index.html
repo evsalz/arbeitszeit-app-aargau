@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arbeitszeit – Kantonsschule Aargau</title>
+<style>
+:root{--blue:#14669a;--blue-dark:#10466b;--ink:#18232d;--muted:#657582;--line:#dce4e9;--bg:#f2f6f8;--white:#fff;--red:#b33b3b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{background:linear-gradient(110deg,#151a20 0 34%,#14669a 34% 100%);color:white;padding:28px 20px}
+.wrap{max-width:1000px;margin:auto}
+header h1{margin:0;font-size:clamp(1.5rem,4vw,2.15rem)}
+header p{margin:5px 0 0;opacity:.9}
+main{max-width:1000px;margin:24px auto;padding:0 16px}
+.panel,.card{background:white;border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:0 3px 12px #1020300a}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.toolbar h2{margin:0;font-size:1.2rem}
+label{display:block;font-size:.88rem;font-weight:650;margin-bottom:5px}
+select,input,textarea,button{font:inherit}
+select,input,textarea{width:100%;padding:10px 11px;border:1px solid #bdcbd4;border-radius:8px;background:#fff;color:var(--ink)}
+input[type="date"]{min-width:150px}
+textarea{min-height:42px;resize:vertical}
+button{border:0;border-radius:8px;padding:10px 15px;font-weight:700;cursor:pointer}
+.primary{background:var(--blue);color:white}.primary:hover{background:var(--blue-dark)}
+.secondary{background:#eaf2f6;color:var(--blue-dark)}
+.danger{background:#fff0f0;color:#9b2c2c;padding:7px 10px}
+.formgrid{display:grid;grid-template-columns:1fr 1.3fr .8fr 1.5fr auto;gap:12px;align-items:end}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}
+.stat{background:#f4f8fa;border-left:4px solid var(--blue);border-radius:8px;padding:13px}
+.stat small{display:block;color:var(--muted)}.stat strong{font-size:1.35rem}
+h3{font-size:1.05rem;margin:0 0 12px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.86rem;color:var(--muted)}
+.tablewrap{overflow-x:auto}
+.empty{padding:22px 8px;color:var(--muted);text-align:center}
+.fieldrow{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.fieldrow:last-child{border:0}
+.note{font-size:.87rem;color:var(--muted);margin:13px 0 0}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:760px){.formgrid{grid-template-columns:1fr 1fr}.formgrid .wide{grid-column:1/-1}.formgrid button{grid-column:1/-1}.summary{grid-template-columns:1fr}.panel{padding:15px}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>Arbeitszeit erfassen</h1>
+<p>Kantonsschule · Kanton Aargau</p>
+</div></header>
+<main>
+<section class="panel">
+<div class="toolbar">
+<h2>Arbeitsjahr</h2>
+<select id="yearSelect" aria-label="Schuljahr" style="width:auto;min-width:160px"></select>
+</div>
+<div class="formgrid">
+<div><label for="date">Datum</label><input id="date" type="date" required></div>
+<div><label for="field">Arbeitsfeld</label><select id="field"></select></div>
+<div><label for="hours">Stunden</label><input id="hours" type="number" min="0.1" max="24" step="0.25" placeholder="z. B. 1.5" required></div>
+<div class="wide"><label for="note">Notiz (optional)</label><input id="note" type="text" maxlength="120" placeholder="z. B. Unterrichtsvorbereitung"></div>
+<button class="primary" id="saveBtn">Eintrag speichern</button>
+</div>
+<p class="note">Schuljahr wird hier als 1. August bis 31. Juli geführt. Einträge bleiben auf diesem Gerät und in diesem Browser gespeichert.</p>
+</section>
+
+<section class="summary" aria-label="Zusammenfassung">
+<div class="stat"><small>Stunden im Schuljahr</small><strong id="total">0 h</strong></div>
+<div class="stat"><small>Anzahl Einträge</small><strong id="count">0</strong></div>
+<div class="stat"><small>Häufigstes Arbeitsfeld</small><strong id="topField">–</strong></div>
+</section>
+
+<section class="panel" style="margin-bottom:16px">
+<div class="toolbar"><h3 style="margin:0">Stunden nach Arbeitsfeld</h3></div>
+<div id="fieldTotals"></div>
+</section>
+
+<section class="panel">
+<div class="toolbar">
+<h3 style="margin:0">Erfasste Einträge</h3>
+<div class="actions"><button class="secondary" id="exportBtn">CSV exportieren</button><button class="secondary" id="backupBtn">Datensicherung herunterladen</button></div>
+</div>
+<div class="tablewrap"><table>
+<thead><tr><th>Datum</th><th>Arbeitsfeld</th><th>Stunden</th><th>Notiz</th><th></th></tr></thead>
+<tbody id="entries"></tbody>
+</table></div>
+<div id="empty" class="empty">Für dieses Schuljahr gibt es noch keine Einträge.</div>
+</section>
+<p class="note">Prototyp: Er bietet keine Anmeldung, Synchronisation oder automatische Sicherung. Für dienstliche Nutzung bitte zuerst Datenschutz, Aufbewahrung und Vorgaben der Schule klären.</p>
+</main>
+
+<script>
+const fields=["Unterricht","Vor- und Nachbereitung","Prüfungen und Beurteilung","Beratung und Betreuung","Team- und Fachschaftsarbeit","Schulentwicklung und Administration","Weiterbildung","Übrige Tätigkeiten"];
+const $=id=>document.getElementById(id);
+const today=new Date();
+const currentStart=today.getMonth()>=7?today.getFullYear():today.getFullYear()-1;
+let selectedYear=currentStart, editId=null;
+const storageKey="ks-aargau-arbeitszeit-v1";
+let records=[];
+try{records=JSON.parse(localStorage.getItem(storageKey)||"[]");if(!Array.isArray(records))records=[]}catch(e){records=[]}
+$("field").innerHTML=fields.map(x=>`<option>${x}</option>`).join("");
+const yearOptions=Array.from({length:12},(_,i)=>currentStart-5+i);
+$("yearSelect").innerHTML=yearOptions.map(y=>`<option value="${y}">${y}/${String(y+1).slice(-2)}</option>`).join("");
+$("yearSelect").value=selectedYear;
+$("date").value=new Date().toISOString().slice(0,10);
+
+function belongs(r,y){const d=new Date(r.date+"T12:00:00");return d>=new Date(y,7,1)&&d<new Date(y+1,7,1)}
+function fmt(n){return Number(n).toLocaleString("de-CH",{maximumFractionDigits:2})}
+function persist(){localStorage.setItem(storageKey,JSON.stringify(records));render()}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function render(){
+const list=records.filter(r=>belongs(r,selectedYear)).sort((a,b)=>b.date.localeCompare(a.date));
+const totals={};fields.forEach(f=>totals[f]=0);list.forEach(r=>totals[r.field]=(totals[r.field]||0)+Number(r.hours));
+const sum=list.reduce((a,r)=>a+Number(r.hours),0);
+$("total").textContent=fmt(sum)+" h";$("count").textContent=list.length;
+const top=Object.entries(totals).sort((a,b)=>b[1]-a[1])[0];
+$("topField").textContent=top&&top[1]>0?top[0]:"–";
+$("fieldTotals").innerHTML=fields.map(f=>`<div class="fieldrow"><span>${esc(f)}</span><strong>${fmt(totals[f])} h</strong></div>`).join("");
+$("entries").innerHTML=list.map(r=>`<tr><td>${esc(r.date)}</td><td>${esc(r.field)}</td><td>${fmt(r.hours)} h</td><td>${esc(r.note||"")}</td><td><button class="danger" data-del="${r.id}" aria-label="Eintrag löschen">Löschen</button></td></tr>`).join("");
+$("empty").style.display=list.length?"none":"block";
+document.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{records=records.filter(r=>r.id!==b.dataset.del);persist()});
+}
+$("yearSelect").onchange=e=>{selectedYear=Number(e.target.value);render()};
+$("saveBtn").onclick=()=>{
+const date=$("date").value, hours=Number($("hours").value), field=$("field").value;
+if(!date||!Number.isFinite(hours)||hours<=0||hours>24){$("hours").focus();return}
+if(!belongs({date},selectedYear)){alert("Bitte ein Datum innerhalb des gewählten Schuljahres eingeben.");return}
+const item={id:editId||String(Date.now()),date,field,hours,note:$("note").value.trim()};
+records=records.filter(r=>r.id!==item.id);records.push(item);editId=null;
+$("hours").value="";$("note").value="";persist();
+};
+function download(name,text,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();URL.revokeObjectURL(a.href)}
+$("exportBtn").onclick=()=>{
+const list=records.filter(r=>belongs(r,selectedYear));
+const rows=[["Datum","Arbeitsfeld","Stunden","Notiz"],...list.map(r=>[r.date,r.field,r.hours,r.note||""])];
+const csv="\uFEFF"+rows.map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(";")).join("\r\n");
+download(`arbeitszeit-${selectedYear}-${selectedYear+1}.csv`,csv,"text/csv;charset=utf-8");
+};
+$("backupBtn").onclick=()=>download("arbeitszeit-datensicherung.json",JSON.stringify(records,null,2),"application/json");
+render();
+</script>
+</body>
+</html>
